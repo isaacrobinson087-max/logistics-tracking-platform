@@ -16,6 +16,11 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      FIREBASE_PROJECT_ID: dehub-logistics-services1
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEHUB_LOGISTICS_SERVICES1 }}
+      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
     steps:
       - name: Checkout completed source
         uses: actions/checkout@v4
@@ -40,21 +45,18 @@ jobs:
           VITE_FIREBASE_APP_ID: 1:18308452070:web:6f8f9d40203dfabd853527
 
       - name: Authenticate with Google service account
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEHUB_LOGISTICS_SERVICES1 != '' }}
+        if: ${{ env.FIREBASE_SERVICE_ACCOUNT != '' }}
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEHUB_LOGISTICS_SERVICES1 }}
 
       - name: Deploy Firestore rules, indexes and Hosting
         shell: bash
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEHUB_LOGISTICS_SERVICES1 }}
         run: |
           if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            npx --yes firebase-tools@latest deploy --only firestore:rules,firestore:indexes,hosting --project dehub-logistics-services1 --non-interactive
+            npx --yes firebase-tools@latest deploy --only firestore:rules,firestore:indexes,hosting --project "$FIREBASE_PROJECT_ID" --non-interactive
           elif [ -n "$FIREBASE_TOKEN" ]; then
-            npx --yes firebase-tools@latest deploy --only firestore:rules,firestore:indexes,hosting --project dehub-logistics-services1 --token "$FIREBASE_TOKEN" --non-interactive
+            npx --yes firebase-tools@latest deploy --only firestore:rules,firestore:indexes,hosting --project "$FIREBASE_PROJECT_ID" --token "$FIREBASE_TOKEN" --non-interactive
           else
             echo "::error::No Firebase deployment credential is configured in GitHub Actions."
             exit 1
