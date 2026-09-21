@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.uid in [
+          "UAQMR84MHQTWUVoIAn4GeabDZU52",
+          "gRBIsL2t4EPhUwigHcPPkbT2Wrn1"
+        ];
+    }
+
+    // Public customers can retrieve a shipment only
+    // when they already know the exact tracking number.
+    match /public_tracking/{trackingNumber} {
+      allow get: if true;
+      allow list: if false;
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Private administrator shipment records.
+    match /shipments/{shipmentId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,55 @@
+name: Reset Dehub Admin Login
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reset-admin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate with Google service account
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEHUB_LOGISTICS_SERVICES1 }}
+
+      - name: Install Firebase Admin SDK
+        run: npm install firebase-admin --no-save
+
+      - name: Update Dehub admin email and password
+        env:
+          NEW_ADMIN_EMAIL: ${{ secrets.DEHUB_ADMIN_NEW_EMAIL }}
+          NEW_ADMIN_PASSWORD: ${{ secrets.DEHUB_ADMIN_NEW_PASSWORD }}
+        run: |
+          node <<'NODE'
+          const { initializeApp, applicationDefault } = require('firebase-admin/app');
+          const { getAuth } = require('firebase-admin/auth');
+
+          initializeApp({ credential: applicationDefault() });
+          const uid = 'UAQMR84MHQTWUVoIAn4GeabDZU52';
+
+          async function run() {
+            if (!process.env.NEW_ADMIN_EMAIL) {
+              throw new Error('DEHUB_ADMIN_NEW_EMAIL secret is missing.');
+            }
+            if (!process.env.NEW_ADMIN_PASSWORD || process.env.NEW_ADMIN_PASSWORD.length < 6) {
+              throw new Error('DEHUB_ADMIN_NEW_PASSWORD secret is missing or too short.');
+            }
+
+            await getAuth().updateUser(uid, {
+              email: process.env.NEW_ADMIN_EMAIL,
+              emailVerified: true,
+              password: process.env.NEW_ADMIN_PASSWORD,
+              disabled: false,
+            });
+
+            console.log('Dehub admin login updated successfully for the existing admin UID.');
+          }
+
+          run().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          NODE
