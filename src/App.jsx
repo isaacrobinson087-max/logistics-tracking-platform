@@ -31,7 +31,7 @@ const demoShipment = {
 
 const emptyForm = {
   trackingNumber: '', description: '', origin: '', destination: '',
-  status: 'Shipment created', service: 'Standard Delivery', estimatedDelivery: '', publicNote: ''
+  status: 'Shipment created', service: 'Standard Delivery', estimatedDelivery: '', publicNote: '', currentLocation: ''
 }
 
 function Brand({ light = false }) {
@@ -199,6 +199,7 @@ function Dashboard({ navigate, demo, user }) {
   const [formOpen, setFormOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [notice, setNotice] = useState('')
+  const [editingShipment, setEditingShipment] = useState(null)
 
   useEffect(() => {
     if (!demo && db) getDocs(query(collection(db, 'shipments'), orderBy('createdAt', 'desc'), limit(50))).then(s => setShipments(s.docs.map(d => ({ id: d.id, ...d.data() }))))
@@ -206,29 +207,76 @@ function Dashboard({ navigate, demo, user }) {
 
   const counts = useMemo(() => ({ total: shipments.length, moving: shipments.filter(s => ['In transit', 'Out for delivery'].includes(s.status)).length, delivered: shipments.filter(s => s.status === 'Delivered').length }), [shipments])
   function generateNumber() { setForm(f => ({ ...f, trackingNumber: `DEH-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 999999)).padStart(6, '0')}` })) }
+  function startCreate() {
+    setEditingShipment(null)
+    setForm({ ...emptyForm, trackingNumber: `DEH-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 999999)).padStart(6, '0')}` })
+    setFormOpen(true)
+  }
+  function startEdit(shipment) {
+    setEditingShipment(shipment)
+    setForm({
+      trackingNumber: shipment.trackingNumber || '',
+      description: shipment.description || '',
+      origin: shipment.origin || '',
+      destination: shipment.destination || '',
+      status: shipment.status || 'Shipment created',
+      service: shipment.service || 'Standard Delivery',
+      estimatedDelivery: shipment.estimatedDelivery || '',
+      publicNote: '',
+      currentLocation: shipment.events?.[0]?.location || shipment.origin || '',
+    })
+    setFormOpen(true)
+  }
+  function closeForm() { setFormOpen(false); setEditingShipment(null); setForm(emptyForm) }
   async function save(e) {
     e.preventDefault()
-    const record = { ...form, trackingNumber: form.trackingNumber.toUpperCase(), updatedAt: new Date().toLocaleString('en-GB'), events: [{ status: form.status, location: form.origin, note: form.publicNote || 'Shipment information received.', date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }), time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) }] }
-    if (demo) setShipments(s => [record, ...s])
-    else {
-      const created = await addDoc(collection(db, 'shipments'), { ...record, createdAt: serverTimestamp(), createdBy: user.uid })
-      await setDoc(doc(db, 'public_tracking', record.trackingNumber), record)
-      setShipments(s => [{ id: created.id, ...record }, ...s])
+    const now = new Date()
+    const trackingNumber = form.trackingNumber.trim().toUpperCase()
+    const event = {
+      status: form.status,
+      location: (editingShipment ? form.currentLocation : form.origin).trim() || form.origin,
+      note: form.publicNote || (editingShipment ? 'Shipment status updated.' : 'Shipment information received.'),
+      date: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
     }
-    setForm(emptyForm); setFormOpen(false); setNotice('Shipment created successfully.'); setTimeout(() => setNotice(''), 3500)
+    const record = {
+      trackingNumber, description: form.description, origin: form.origin, destination: form.destination,
+      status: form.status, service: form.service, estimatedDelivery: form.estimatedDelivery, publicNote: form.publicNote,
+      updatedAt: now.toLocaleString('en-GB'),
+      events: editingShipment ? [event, ...(editingShipment.events || [])] : [event],
+    }
+
+    if (editingShipment) {
+      if (demo) setShipments(items => items.map(item => (item.id || item.trackingNumber) === (editingShipment.id || editingShipment.trackingNumber) ? { ...editingShipment, ...record } : item))
+      else {
+        await updateDoc(doc(db, 'shipments', editingShipment.id), { ...record, updatedBy: user.uid, lastUpdatedAt: serverTimestamp() })
+        await setDoc(doc(db, 'public_tracking', trackingNumber), record)
+        setShipments(items => items.map(item => item.id === editingShipment.id ? { ...item, ...record } : item))
+      }
+      setNotice('Shipment updated successfully.')
+    } else {
+      if (demo) setShipments(items => [record, ...items])
+      else {
+        const created = await addDoc(collection(db, 'shipments'), { ...record, createdAt: serverTimestamp(), createdBy: user.uid })
+        await setDoc(doc(db, 'public_tracking', trackingNumber), record)
+        setShipments(items => [{ id: created.id, ...record }, ...items])
+      }
+      setNotice('Shipment created successfully.')
+    }
+    closeForm(); setTimeout(() => setNotice(''), 3500)
   }
   async function logout() { if (!demo && auth) await signOut(auth); navigate('home') }
   return <div className="dashboard">
-    <aside><Brand light /><nav><button className="active"><LayoutDashboard /> Overview</button><button onClick={() => setFormOpen(true)}><Plus /> New shipment</button></nav><button className="logout" onClick={logout}><LogOut /> Sign out</button></aside>
-    <main className="dash-main"><header><div><p>ADMIN DASHBOARD</p><h1>Shipment overview</h1></div><button className="primary" onClick={() => { generateNumber(); setFormOpen(true) }}><Plus /> Create shipment</button></header>
+    <aside><Brand light /><nav><button className="active"><LayoutDashboard /> Overview</button><button onClick={startCreate}><Plus /> New shipment</button></nav><button className="logout" onClick={logout}><LogOut /> Sign out</button></aside>
+    <main className="dash-main"><header><div><p>ADMIN DASHBOARD</p><h1>Shipment overview</h1></div><button className="primary" onClick={startCreate}><Plus /> Create shipment</button></header>
       {notice && <div className="success-notice"><Check />{notice}</div>}
       <section className="stat-grid"><article><span><Box /></span><div><small>ALL SHIPMENTS</small><strong>{counts.total}</strong></div></article><article><span><Truck /></span><div><small>IN PROGRESS</small><strong>{counts.moving}</strong></div></article><article><span><PackageCheck /></span><div><small>DELIVERED</small><strong>{counts.delivered}</strong></div></article></section>
       <section className="shipment-table"><div className="table-title"><div><h2>Recent shipments</h2><p>View and manage customer deliveries.</p></div><span>{shipments.length} records</span></div>
-        <div className="table-scroll"><table><thead><tr><th>Tracking number</th><th>Route</th><th>Status</th><th>Delivery estimate</th></tr></thead><tbody>{shipments.map((s, i) => <tr key={s.id || i}><td><strong>{s.trackingNumber}</strong><small>{s.description}</small></td><td>{s.origin}<small>to {s.destination}</small></td><td><span className="table-status">{s.status}</span></td><td>{s.estimatedDelivery || 'Not set'}</td></tr>)}</tbody></table></div>
+        <div className="table-scroll"><table><thead><tr><th>Tracking number</th><th>Route</th><th>Status</th><th>Delivery estimate</th><th>Action</th></tr></thead><tbody>{shipments.map((s, i) => <tr key={s.id || i}><td><strong>{s.trackingNumber}</strong><small>{s.description}</small></td><td>{s.origin}<small>to {s.destination}</small></td><td><span className="table-status">{s.status}</span></td><td>{s.estimatedDelivery || 'Not set'}</td><td><button className="table-action" onClick={() => startEdit(s)}>Update</button></td></tr>)}</tbody></table></div>
         {!shipments.length && <div className="empty-state"><Box /><h3>No shipments yet</h3><p>Create the first shipment to begin tracking.</p></div>}
       </section>
     </main>
-    {formOpen && <div className="modal-backdrop" role="presentation"><div className="modal" role="dialog" aria-modal="true" aria-labelledby="new-shipment-title"><div className="modal-head"><div><p className="eyebrow">Shipment record</p><h2 id="new-shipment-title">Create new shipment</h2></div><button onClick={() => setFormOpen(false)} aria-label="Close"><X /></button></div><form onSubmit={save} className="shipment-form"><label>Tracking number<div className="inline-field"><input required value={form.trackingNumber} onChange={e => setForm({ ...form, trackingNumber: e.target.value })} placeholder="DEH-2026-000001" /><button type="button" onClick={generateNumber}>Generate</button></div></label><label>Package description<input required value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="e.g. Documents" /></label><div className="form-two"><label>Origin<input required value={form.origin} onChange={e => setForm({ ...form, origin: e.target.value })} placeholder="City, country" /></label><label>Destination<input required value={form.destination} onChange={e => setForm({ ...form, destination: e.target.value })} placeholder="City, country" /></label></div><div className="form-two"><label>Status<select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>{statusOptions.map(s => <option key={s}>{s}</option>)}</select></label><label>Service<input value={form.service} onChange={e => setForm({ ...form, service: e.target.value })} /></label></div><label>Estimated delivery<input value={form.estimatedDelivery} onChange={e => setForm({ ...form, estimatedDelivery: e.target.value })} placeholder="e.g. 26 September 2026" /></label><label>Public update<textarea value={form.publicNote} onChange={e => setForm({ ...form, publicNote: e.target.value })} placeholder="Information the customer can see" /></label><div className="form-actions"><button type="button" onClick={() => setFormOpen(false)}>Cancel</button><button type="submit" className="primary">Create shipment <ArrowRight /></button></div></form></div></div>}
+    {formOpen && <div className="modal-backdrop" role="presentation"><div className="modal" role="dialog" aria-modal="true" aria-labelledby="shipment-form-title"><div className="modal-head"><div><p className="eyebrow">Shipment record</p><h2 id="shipment-form-title">{editingShipment ? 'Update shipment' : 'Create new shipment'}</h2></div><button onClick={closeForm} aria-label="Close"><X /></button></div><form onSubmit={save} className="shipment-form"><label>Tracking number<div className="inline-field"><input required readOnly={!!editingShipment} value={form.trackingNumber} onChange={e => setForm({ ...form, trackingNumber: e.target.value })} placeholder="DEH-2026-000001" />{!editingShipment && <button type="button" onClick={generateNumber}>Generate</button>}</div></label><label>Package description<input required value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="e.g. Documents" /></label><div className="form-two"><label>Origin<input required value={form.origin} onChange={e => setForm({ ...form, origin: e.target.value })} placeholder="City, country" /></label><label>Destination<input required value={form.destination} onChange={e => setForm({ ...form, destination: e.target.value })} placeholder="City, country" /></label></div><div className="form-two"><label>Status<select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>{statusOptions.map(s => <option key={s}>{s}</option>)}</select></label><label>Service<input value={form.service} onChange={e => setForm({ ...form, service: e.target.value })} /></label></div>{editingShipment && <label>Current location<input required value={form.currentLocation} onChange={e => setForm({ ...form, currentLocation: e.target.value })} placeholder="Current city or facility" /></label>}<label>Estimated delivery<input value={form.estimatedDelivery} onChange={e => setForm({ ...form, estimatedDelivery: e.target.value })} placeholder="e.g. 26 September 2026" /></label><label>Public update<textarea value={form.publicNote} onChange={e => setForm({ ...form, publicNote: e.target.value })} placeholder="Information the customer can see" /></label><div className="form-actions"><button type="button" onClick={closeForm}>Cancel</button><button type="submit" className="primary">{editingShipment ? 'Save update' : 'Create shipment'} <ArrowRight /></button></div></form></div></div>}
   </div>
 }
 
