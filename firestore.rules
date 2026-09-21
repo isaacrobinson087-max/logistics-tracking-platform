@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin() {
+      return isSignedIn() && request.auth.uid == "UAQMR84MHQTWUVoIAn4GeabDZU52";
+    }
+
+    // Customers may retrieve a record only when they already know its exact,
+    // difficult-to-guess tracking number. Listing the collection is denied.
+    match /public_tracking/{trackingNumber} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /shipments/{shipmentId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+  }
+}
