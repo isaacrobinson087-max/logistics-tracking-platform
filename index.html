@@ -2,257 +2,851 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#092e2a" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <meta
+      name="theme-color"
+      content="#092e2a"
+    />
+
     <meta
       name="description"
       content="Track shipments with Dehub Logistics Services."
     />
 
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="/favicon.svg"
+    />
 
     <title>Dehub Logistics Services</title>
 
     <style>
-      #dehub-language-tools {
+
+      #dehub-language-button {
         position: fixed;
-        right: 12px;
-        bottom: 12px;
-        z-index: 99999;
-        background: #ffffff;
-        border: 1px solid #d8e4e1;
-        border-radius: 12px;
-        padding: 8px 10px;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-family: Arial, sans-serif;
-      }
+        top: 84px;
+        right: 14px;
 
-      #dehub-language-tools .language-label {
-        font-size: 13px;
-        font-weight: 700;
-        color: #173c36;
-      }
+        z-index: 100000;
 
-      #dehub-language-tools .goog-te-combo {
-        border: 1px solid #b9cec9;
-        border-radius: 8px;
-        padding: 6px 8px;
-        background: white;
-        color: #173c36;
-        outline: none;
-        margin: 0;
-      }
-
-      #dehub-language-tools button {
         border: 0;
-        border-radius: 8px;
+        border-radius: 999px;
+
         background: #0b4a42;
         color: white;
-        padding: 7px 9px;
+
+        padding: 10px 14px;
+
+        font-family: Arial, sans-serif;
+        font-size: 14px;
         font-weight: 700;
+
+        box-shadow:
+          0 8px 24px
+          rgba(0, 0, 0, 0.18);
+
         cursor: pointer;
       }
 
-      #dehub-language-tools .goog-te-gadget {
-        font-size: 11px;
-        color: #667a76;
+
+      #dehub-language-panel {
+        position: fixed;
+
+        top: 130px;
+        right: 14px;
+
+        z-index: 100000;
+
+        display: none;
+
+        width: min(
+          280px,
+          calc(100vw - 28px)
+        );
+
+        background: white;
+
+        border:
+          1px solid #d8e4e1;
+
+        border-radius: 14px;
+
+        padding: 12px;
+
+        box-shadow:
+          0 14px 40px
+          rgba(0, 0, 0, 0.20);
+
+        font-family:
+          Arial,
+          sans-serif;
       }
+
+
+      #dehub-language-panel.open {
+        display: block;
+      }
+
+
+      #dehub-language-panel
+      .panel-title {
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content:
+          space-between;
+
+        gap: 10px;
+
+        margin-bottom: 10px;
+
+        color: #173c36;
+
+        font-weight: 800;
+      }
+
+
+      #dehub-language-panel
+      .close-language-panel {
+
+        border: 0;
+
+        background: transparent;
+
+        color: #173c36;
+
+        font-size: 22px;
+
+        cursor: pointer;
+      }
+
+
+      #dehub-language-panel
+      .goog-te-gadget {
+
+        font-size: 11px;
+
+        color: #6b7e7a;
+      }
+
+
+      #dehub-language-panel
+      .goog-te-combo {
+
+        width: 100%;
+
+        margin:
+          0 0 10px 0;
+
+        border:
+          1px solid #b9cec9;
+
+        border-radius: 9px;
+
+        padding: 9px 10px;
+
+        background: white;
+
+        color: #173c36;
+
+        outline: none;
+      }
+
+
+      #dehub-english-button {
+
+        width: 100%;
+
+        border: 0;
+
+        border-radius: 9px;
+
+        background: #eef5f3;
+
+        color: #0b4a42;
+
+        padding: 9px 10px;
+
+        font-weight: 800;
+
+        cursor: pointer;
+      }
+
 
       body {
         top: 0 !important;
       }
 
-      @media (max-width: 600px) {
-        #dehub-language-tools {
-          right: 8px;
-          bottom: 8px;
-          max-width: calc(100vw - 16px);
+
+      @media (
+        max-width: 600px
+      ) {
+
+        #dehub-language-button {
+
+          top: 76px;
+
+          right: 10px;
+
+          padding:
+            9px 12px;
+
+          font-size: 13px;
         }
 
-        #dehub-language-tools .language-label {
-          display: none;
+
+        #dehub-language-panel {
+
+          top: 118px;
+
+          right: 10px;
         }
 
-        #dehub-language-tools .goog-te-combo {
-          max-width: 145px;
-        }
       }
+
     </style>
+
   </head>
 
+
   <body>
+
     <div id="root"></div>
 
-    <div id="dehub-language-tools">
-      <span class="language-label">🌐 Language</span>
 
-      <div id="google_translate_element"></div>
+    <button
+      id="dehub-language-button"
+      type="button"
+      aria-expanded="false"
+    >
 
-      <button type="button" id="dehub-english-button">
+      🌐 Language
+
+    </button>
+
+
+    <div
+      id="dehub-language-panel"
+      aria-hidden="true"
+    >
+
+      <div class="panel-title">
+
+        <span>
+          Choose language
+        </span>
+
+        <button
+          type="button"
+          class="close-language-panel"
+          aria-label="Close"
+        >
+
+          ×
+
+        </button>
+
+      </div>
+
+
+      <div
+        id="google_translate_element"
+      ></div>
+
+
+      <button
+        type="button"
+        id="dehub-english-button"
+      >
+
         English
+
       </button>
+
     </div>
 
+
     <script>
+
       (function () {
-        const STORAGE_KEY = 'dehub-language'
+
+        const STORAGE_KEY =
+          'dehub-language'
+
 
         function getSavedLanguage() {
+
           try {
-            return localStorage.getItem(STORAGE_KEY)
+
+            return localStorage
+              .getItem(
+                STORAGE_KEY
+              )
+
           } catch {
+
             return null
+
           }
+
         }
 
-        function saveLanguage(language) {
+
+        function saveLanguage(
+          language
+        ) {
+
           try {
-            localStorage.setItem(STORAGE_KEY, language)
+
+            localStorage
+              .setItem(
+                STORAGE_KEY,
+                language
+              )
+
           } catch {}
+
         }
 
-        function findPhoneLanguage(combo) {
-          const available = Array.from(combo.options)
-            .map(option => option.value)
-            .filter(Boolean)
+
+        function findPhoneLanguage(
+          combo
+        ) {
+
+          const available =
+            Array
+              .from(
+                combo.options
+              )
+              .map(
+                option =>
+                  option.value
+              )
+              .filter(Boolean)
+
 
           const phoneLanguages =
-            navigator.languages && navigator.languages.length
+
+            navigator.languages &&
+            navigator.languages.length
+
               ? navigator.languages
-              : [navigator.language || 'en']
 
-          for (const phoneLanguage of phoneLanguages) {
-            const raw = String(phoneLanguage).toLowerCase()
+              : [
+                  navigator.language
+                  || 'en'
+                ]
 
-            if (raw.startsWith('zh')) {
+
+          for (
+            const phoneLanguage
+            of phoneLanguages
+          ) {
+
+            const raw =
+              String(
+                phoneLanguage
+              )
+              .toLowerCase()
+
+
+            if (
+              raw.startsWith('zh')
+            ) {
+
               if (
-                raw.includes('tw') ||
-                raw.includes('hk') ||
+                raw.includes('tw')
+                ||
+                raw.includes('hk')
+                ||
                 raw.includes('hant')
               ) {
-                if (available.includes('zh-TW')) return 'zh-TW'
+
+                if (
+                  available.includes(
+                    'zh-TW'
+                  )
+                ) {
+
+                  return 'zh-TW'
+
+                }
+
               }
 
-              if (available.includes('zh-CN')) return 'zh-CN'
+
+              if (
+                available.includes(
+                  'zh-CN'
+                )
+              ) {
+
+                return 'zh-CN'
+
+              }
+
             }
 
-            const exact = available.find(
-              value => value.toLowerCase() === raw
-            )
 
-            if (exact) return exact
+            const exact =
+              available.find(
 
-            const base = raw.split('-')[0]
+                value =>
+                  value
+                    .toLowerCase()
+                  === raw
 
-            const baseMatch = available.find(
-              value => value.toLowerCase() === base
-            )
+              )
 
-            if (baseMatch) return baseMatch
+
+            if (exact) {
+
+              return exact
+
+            }
+
+
+            const base =
+              raw.split('-')[0]
+
+
+            const baseMatch =
+              available.find(
+
+                value =>
+                  value
+                    .toLowerCase()
+                  === base
+
+              )
+
+
+            if (baseMatch) {
+
+              return baseMatch
+
+            }
+
           }
 
+
           return ''
+
         }
 
-        function applyLanguage(language) {
-          if (!language || language === 'en') return
 
-          const combo = document.querySelector('.goog-te-combo')
+        function applyLanguage(
+          language
+        ) {
 
-          if (!combo) return
+          if (
+            !language
+            ||
+            language === 'en'
+          ) {
 
-          combo.value = language
-          combo.dispatchEvent(new Event('change'))
-        }
+            return
 
-        window.googleTranslateElementInit = function () {
-          new google.translate.TranslateElement(
-            {
-              pageLanguage: 'en',
-              autoDisplay: false
-            },
-            'google_translate_element'
+          }
+
+
+          const combo =
+            document.querySelector(
+              '.goog-te-combo'
+            )
+
+
+          if (!combo) {
+
+            return
+
+          }
+
+
+          combo.value =
+            language
+
+
+          combo.dispatchEvent(
+
+            new Event(
+              'change'
+            )
+
           )
 
-          setTimeout(function () {
-            const combo = document.querySelector('.goog-te-combo')
-
-            if (!combo) return
-
-            let language = getSavedLanguage()
-
-            if (!language || language === 'auto') {
-              language = findPhoneLanguage(combo)
-            }
-
-            if (language && language !== 'en') {
-              saveLanguage(language)
-              applyLanguage(language)
-            }
-
-            combo.addEventListener('change', function () {
-              if (combo.value) {
-                saveLanguage(combo.value)
-              }
-            })
-          }, 900)
         }
 
-        document.addEventListener(
-          'click',
-          function (event) {
-            if (
-              event.target.closest &&
-              event.target.closest('#dehub-language-tools')
-            ) {
-              return
+
+        function openLanguagePanel() {
+
+          const panel =
+            document.getElementById(
+              'dehub-language-panel'
+            )
+
+
+          const button =
+            document.getElementById(
+              'dehub-language-button'
+            )
+
+
+          panel.classList.add(
+            'open'
+          )
+
+
+          panel.setAttribute(
+            'aria-hidden',
+            'false'
+          )
+
+
+          button.setAttribute(
+            'aria-expanded',
+            'true'
+          )
+
+        }
+
+
+        function closeLanguagePanel() {
+
+          const panel =
+            document.getElementById(
+              'dehub-language-panel'
+            )
+
+
+          const button =
+            document.getElementById(
+              'dehub-language-button'
+            )
+
+
+          panel.classList.remove(
+            'open'
+          )
+
+
+          panel.setAttribute(
+            'aria-hidden',
+            'true'
+          )
+
+
+          button.setAttribute(
+            'aria-expanded',
+            'false'
+          )
+
+        }
+
+
+        window
+          .googleTranslateElementInit =
+          function () {
+
+            new google
+              .translate
+              .TranslateElement(
+
+                {
+
+                  pageLanguage:
+                    'en',
+
+                  autoDisplay:
+                    false
+
+                },
+
+                'google_translate_element'
+
+              )
+
+
+            setTimeout(
+              function () {
+
+                const combo =
+                  document
+                    .querySelector(
+                      '.goog-te-combo'
+                    )
+
+
+                if (!combo) {
+
+                  return
+
+                }
+
+
+                let language =
+                  getSavedLanguage()
+
+
+                if (
+                  !language
+                  ||
+                  language ===
+                    'auto'
+                ) {
+
+                  language =
+                    findPhoneLanguage(
+                      combo
+                    )
+
+                }
+
+
+                if (
+                  language
+                  &&
+                  language !==
+                    'en'
+                ) {
+
+                  saveLanguage(
+                    language
+                  )
+
+
+                  applyLanguage(
+                    language
+                  )
+
+                }
+
+
+                combo
+                  .addEventListener(
+
+                    'change',
+
+                    function () {
+
+                      if (
+                        combo.value
+                      ) {
+
+                        saveLanguage(
+                          combo.value
+                        )
+
+                      }
+
+
+                      setTimeout(
+                        closeLanguagePanel,
+                        150
+                      )
+
+                    }
+
+                  )
+
+              },
+
+              900
+
+            )
+
+          }
+
+
+        document
+          .addEventListener(
+
+            'DOMContentLoaded',
+
+            function () {
+
+              const button =
+                document
+                  .getElementById(
+                    'dehub-language-button'
+                  )
+
+
+              const panel =
+                document
+                  .getElementById(
+                    'dehub-language-panel'
+                  )
+
+
+              const closeButton =
+                document
+                  .querySelector(
+                    '.close-language-panel'
+                  )
+
+
+              const englishButton =
+                document
+                  .getElementById(
+                    'dehub-english-button'
+                  )
+
+
+              button
+                .addEventListener(
+
+                  'click',
+
+                  function () {
+
+                    if (
+                      panel
+                        .classList
+                        .contains(
+                          'open'
+                        )
+                    ) {
+
+                      closeLanguagePanel()
+
+                    } else {
+
+                      openLanguagePanel()
+
+                    }
+
+                  }
+
+                )
+
+
+              closeButton
+                .addEventListener(
+
+                  'click',
+
+                  closeLanguagePanel
+
+                )
+
+
+              document
+                .addEventListener(
+
+                  'click',
+
+                  function (
+                    event
+                  ) {
+
+                    if (
+                      !panel
+                        .classList
+                        .contains(
+                          'open'
+                        )
+                    ) {
+
+                      return
+
+                    }
+
+
+                    if (
+                      panel
+                        .contains(
+                          event.target
+                        )
+                      ||
+                      button
+                        .contains(
+                          event.target
+                        )
+                    ) {
+
+                      return
+
+                    }
+
+
+                    closeLanguagePanel()
+
+                  }
+
+                )
+
+
+              englishButton
+                .addEventListener(
+
+                  'click',
+
+                  function () {
+
+                    saveLanguage(
+                      'en'
+                    )
+
+
+                    const expires =
+
+                      'Thu, 01 Jan 1970 00:00:00 GMT'
+
+
+                    document.cookie =
+
+                      'googtrans=;expires='
+                      +
+                      expires
+                      +
+                      ';path=/'
+
+
+                    document.cookie =
+
+                      'googtrans=;expires='
+                      +
+                      expires
+                      +
+                      ';path=/;domain='
+                      +
+                      location.hostname
+
+
+                    location.reload()
+
+                  }
+
+                )
+
             }
 
-            setTimeout(function () {
-              const language = getSavedLanguage()
+          )
 
-              if (language && language !== 'en') {
-                applyLanguage(language)
-              }
-            }, 700)
-          },
-          true
-        )
-
-        document.addEventListener('DOMContentLoaded', function () {
-          const englishButton =
-            document.getElementById('dehub-english-button')
-
-          englishButton.addEventListener('click', function () {
-            saveLanguage('en')
-
-            const expires =
-              'Thu, 01 Jan 1970 00:00:00 GMT'
-
-            document.cookie =
-              'googtrans=;expires=' +
-              expires +
-              ';path=/'
-
-            document.cookie =
-              'googtrans=;expires=' +
-              expires +
-              ';path=/;domain=' +
-              location.hostname
-
-            location.reload()
-          })
-        })
       })()
+
     </script>
+
 
     <script
       src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
     ></script>
 
-    <script type="module" src="/src/main.jsx"></script>
+
+    <script
+      type="module"
+      src="/src/main.jsx"
+    ></script>
+
   </body>
+
 </html>
