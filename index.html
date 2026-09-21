@@ -4,12 +4,255 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#092e2a" />
-    <meta name="description" content="Track shipments with Dehub Logistics Services." />
+    <meta
+      name="description"
+      content="Track shipments with Dehub Logistics Services."
+    />
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
     <title>Dehub Logistics Services</title>
+
+    <style>
+      #dehub-language-tools {
+        position: fixed;
+        right: 12px;
+        bottom: 12px;
+        z-index: 99999;
+        background: #ffffff;
+        border: 1px solid #d8e4e1;
+        border-radius: 12px;
+        padding: 8px 10px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: Arial, sans-serif;
+      }
+
+      #dehub-language-tools .language-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #173c36;
+      }
+
+      #dehub-language-tools .goog-te-combo {
+        border: 1px solid #b9cec9;
+        border-radius: 8px;
+        padding: 6px 8px;
+        background: white;
+        color: #173c36;
+        outline: none;
+        margin: 0;
+      }
+
+      #dehub-language-tools button {
+        border: 0;
+        border-radius: 8px;
+        background: #0b4a42;
+        color: white;
+        padding: 7px 9px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      #dehub-language-tools .goog-te-gadget {
+        font-size: 11px;
+        color: #667a76;
+      }
+
+      body {
+        top: 0 !important;
+      }
+
+      @media (max-width: 600px) {
+        #dehub-language-tools {
+          right: 8px;
+          bottom: 8px;
+          max-width: calc(100vw - 16px);
+        }
+
+        #dehub-language-tools .language-label {
+          display: none;
+        }
+
+        #dehub-language-tools .goog-te-combo {
+          max-width: 145px;
+        }
+      }
+    </style>
   </head>
+
   <body>
     <div id="root"></div>
+
+    <div id="dehub-language-tools">
+      <span class="language-label">🌐 Language</span>
+
+      <div id="google_translate_element"></div>
+
+      <button type="button" id="dehub-english-button">
+        English
+      </button>
+    </div>
+
+    <script>
+      (function () {
+        const STORAGE_KEY = 'dehub-language'
+
+        function getSavedLanguage() {
+          try {
+            return localStorage.getItem(STORAGE_KEY)
+          } catch {
+            return null
+          }
+        }
+
+        function saveLanguage(language) {
+          try {
+            localStorage.setItem(STORAGE_KEY, language)
+          } catch {}
+        }
+
+        function findPhoneLanguage(combo) {
+          const available = Array.from(combo.options)
+            .map(option => option.value)
+            .filter(Boolean)
+
+          const phoneLanguages =
+            navigator.languages && navigator.languages.length
+              ? navigator.languages
+              : [navigator.language || 'en']
+
+          for (const phoneLanguage of phoneLanguages) {
+            const raw = String(phoneLanguage).toLowerCase()
+
+            if (raw.startsWith('zh')) {
+              if (
+                raw.includes('tw') ||
+                raw.includes('hk') ||
+                raw.includes('hant')
+              ) {
+                if (available.includes('zh-TW')) return 'zh-TW'
+              }
+
+              if (available.includes('zh-CN')) return 'zh-CN'
+            }
+
+            const exact = available.find(
+              value => value.toLowerCase() === raw
+            )
+
+            if (exact) return exact
+
+            const base = raw.split('-')[0]
+
+            const baseMatch = available.find(
+              value => value.toLowerCase() === base
+            )
+
+            if (baseMatch) return baseMatch
+          }
+
+          return ''
+        }
+
+        function applyLanguage(language) {
+          if (!language || language === 'en') return
+
+          const combo = document.querySelector('.goog-te-combo')
+
+          if (!combo) return
+
+          combo.value = language
+          combo.dispatchEvent(new Event('change'))
+        }
+
+        window.googleTranslateElementInit = function () {
+          new google.translate.TranslateElement(
+            {
+              pageLanguage: 'en',
+              autoDisplay: false
+            },
+            'google_translate_element'
+          )
+
+          setTimeout(function () {
+            const combo = document.querySelector('.goog-te-combo')
+
+            if (!combo) return
+
+            let language = getSavedLanguage()
+
+            if (!language || language === 'auto') {
+              language = findPhoneLanguage(combo)
+            }
+
+            if (language && language !== 'en') {
+              saveLanguage(language)
+              applyLanguage(language)
+            }
+
+            combo.addEventListener('change', function () {
+              if (combo.value) {
+                saveLanguage(combo.value)
+              }
+            })
+          }, 900)
+        }
+
+        document.addEventListener(
+          'click',
+          function (event) {
+            if (
+              event.target.closest &&
+              event.target.closest('#dehub-language-tools')
+            ) {
+              return
+            }
+
+            setTimeout(function () {
+              const language = getSavedLanguage()
+
+              if (language && language !== 'en') {
+                applyLanguage(language)
+              }
+            }, 700)
+          },
+          true
+        )
+
+        document.addEventListener('DOMContentLoaded', function () {
+          const englishButton =
+            document.getElementById('dehub-english-button')
+
+          englishButton.addEventListener('click', function () {
+            saveLanguage('en')
+
+            const expires =
+              'Thu, 01 Jan 1970 00:00:00 GMT'
+
+            document.cookie =
+              'googtrans=;expires=' +
+              expires +
+              ';path=/'
+
+            document.cookie =
+              'googtrans=;expires=' +
+              expires +
+              ';path=/;domain=' +
+              location.hostname
+
+            location.reload()
+          })
+        })
+      })()
+    </script>
+
+    <script
+      src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+    ></script>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
